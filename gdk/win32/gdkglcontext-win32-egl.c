@@ -119,9 +119,26 @@ gdk_win32_gl_context_egl_begin_frame (GdkDrawContext *draw_context,
                                       gboolean        prefers_high_depth,
                                       cairo_region_t *update_area)
 {
-  gdk_win32_surface_handle_queued_move_resize (draw_context);
+  GdkSurface *surface = gdk_draw_context_get_surface (draw_context);
+
+  gdk_win32_surface_handle_queued_move_resize (surface);
 
   GDK_DRAW_CONTEXT_CLASS (gdk_win32_gl_context_egl_parent_class)->begin_frame (draw_context, prefers_high_depth, update_area);
+}
+
+static GdkGLAPI
+gdk_win32_gl_context_egl_realize (GdkGLContext *context,
+                                  GError **error)
+{
+  GdkDisplay *display =
+    gdk_draw_context_get_display (GDK_DRAW_CONTEXT (context));
+  GdkGLContextClass *klass =
+    GDK_GL_CONTEXT_CLASS (gdk_win32_gl_context_egl_parent_class);
+
+  if (GDK_WIN32_DISPLAY (display)->is_angle)
+    gdk_gl_context_set_allowed_apis (context, GDK_GL_API_GLES);
+
+  return klass->realize (context, error);
 }
 
 static void
@@ -131,6 +148,7 @@ gdk_win32_gl_context_egl_class_init (GdkWin32GLContextClass *klass)
   GdkDrawContextClass *draw_context_class = GDK_DRAW_CONTEXT_CLASS(klass);
 
   context_class->backend_type = GDK_GL_EGL;
+  context_class->realize = gdk_win32_gl_context_egl_realize;
 
   draw_context_class->begin_frame = gdk_win32_gl_context_egl_begin_frame;
   draw_context_class->end_frame = gdk_win32_gl_context_egl_end_frame;

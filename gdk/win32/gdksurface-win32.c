@@ -3185,6 +3185,14 @@ handle_aerosnap_move_resize (GdkSurface                   *window,
   int halfright = 0;
   int fullup = 0;
   gboolean fullup_edge = FALSE;
+  GdkWin32Surface *impl = GDK_WIN32_SURFACE (window);
+
+  if (context->op == GDK_WIN32_DRAGOP_MOVE)
+    {
+      if (impl->toplevel_layout != NULL &&
+         !gdk_toplevel_layout_get_resizable (impl->toplevel_layout))
+        return;
+    }
 
   if (context->op == GDK_WIN32_DRAGOP_RESIZE)
     switch (context->edge)
@@ -5109,14 +5117,12 @@ gdk_win32_surface_apply_queued_move_resize (GdkSurface *surface,
 }
 
 RECT
-gdk_win32_surface_handle_queued_move_resize (GdkDrawContext *draw_context)
+gdk_win32_surface_handle_queued_move_resize (GdkSurface *surface)
 {
-  GdkSurface *surface;
   GdkWin32Surface *impl;
   int scale;
   RECT queued_window_rect;
 
-  surface = gdk_draw_context_get_surface (draw_context);
   impl = GDK_WIN32_SURFACE (surface);
   scale = gdk_surface_get_scale_factor (surface);
 
